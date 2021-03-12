@@ -1,15 +1,15 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import chipStyle from './Chip.module.less'
+import produce from 'immer'
 
 export interface IChipProp {
   name: string;
-  address: string;
 }
 
 export function Chip(prop: IChipProp) {
   return (
     <div className={chipStyle.chip}>
-      {prop.name ? prop.name : prop.address}
+      {prop.name}
     </div>
   )
 }
@@ -19,11 +19,28 @@ export interface IChipFieldProp {
 }
 
 export function ChipField(prop: IChipFieldProp) {
+  const [state, setState] = useState<IChipFieldProp>(prop)
   return (
     <div className={chipStyle.field}>
-      {prop.items.map(p => <Chip name={p.name} address={p.address} />)}
-      <Chip name='Hammer' address='add'/>
-      <input/>
+      {state.items.map(p => <Chip name={p.name} />)}
+      <input className={chipStyle.text}
+        onKeyDown={e => {
+          const target = e.target as HTMLInputElement
+          if (e.key === 'Backspace' && target.selectionStart === 0 && target.selectionEnd === 0) {
+            setState(produce(state, draft => {
+              draft.items.pop()
+            }))
+          }
+          if (e.key === 'Enter' && target.value.length > 0) {
+            setState(produce(state, draft => {
+              draft.items.push({
+                name: target.value
+              })
+              target.value = ''
+            }))
+          }
+        }}
+      />
     </div>
   )
 }
