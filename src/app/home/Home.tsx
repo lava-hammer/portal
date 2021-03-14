@@ -12,11 +12,12 @@ export default function Home() {
       }}
     >
       <ChipField items={[
-        { name: 'Hammer', address: '12321321321' },
-        { name: 'Lisa', address: '12321321321' },
-        { name: 'Green', address: '12321321321' },
-        { name: 'Doris', address: '12321321321' },
+        { name: 'Hammer' },
+        { name: 'Lisa' },
+        { name: 'Green'},
+        { name: 'Doris'},
       ]} />
+      <input className={homeStyle.test}></input>
     </div>
   )
 }

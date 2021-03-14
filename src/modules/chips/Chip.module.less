@@ -1,18 +1,47 @@
 
+@FONT_SIZE: 16px;
+
+div {
+  font-size: @FONT_SIZE;
+}
+
 .chip {
   display: inline-block;
   padding: 0px 4px;
   border: 1px solid black;
   border-radius: 12px;
   margin: 4px 4px;
+  // cursor: move;
+  user-select: none;
+}
+
+.del {
+  display: none;
+  margin: 0px 4px;
+  width: 10px;
+}
+
+.del:hover {
+  font-weight: bold;
+}
+
+.chip:hover .del {
+  display: inline-block;
+  color: red;
 }
 
 .field {
   padding: 10px;
   border: 1px dashed blue;
-  line-height: 32px;
+  line-height: 24px;
+  display: flex;
+  flex-flow: row wrap;
 }
 
 .text {
-  
+  font-size: @FONT_SIZE;
+  flex: 1;
+  min-width: 50px;
+  border: 0px;
+  outline: 0px;
 }
