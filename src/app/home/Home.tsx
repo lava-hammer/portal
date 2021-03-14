@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChipField } from '../../modules/chips/Chip'
+import { TestChipField } from '../../modules/chips/Chip'
 import homeStyle from './Home.module.less'
 
 export default function Home() {
@@ -11,12 +11,7 @@ export default function Home() {
         height: '300px',
       }}
     >
-      <ChipField items={[
-        { name: 'Hammer' },
-        { name: 'Lisa' },
-        { name: 'Green'},
-        { name: 'Doris'},
-      ]} />
+      <TestChipField />
       <input className={homeStyle.test}></input>
     </div>
   )

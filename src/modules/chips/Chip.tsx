@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
 import chipStyle from './Chip.module.less'
 import produce from 'immer'
 
@@ -26,41 +26,61 @@ export function Chip(prop: IChipProp) {
 }
 
 export interface IChipFieldProp {
-  items: IChipProp[];
+  items?: string[];
+  onAddItem: (value: string) => void;
+  onRemoveItem: (index: number, item: string) => void;
 }
 
 export function ChipField(prop: IChipFieldProp) {
-  const [state, setState] = useState<IChipFieldProp>(prop)
+  const items = prop.items || []
   return (
     <div className={chipStyle.field}>
-      {state.items.map((p, index) => 
+      {items.map((name, index) => 
       <Chip 
         key={index}
-        name={p.name}
+        name={name}
         onDelete={e => {
-          setState(produce(state, draft => {
-            draft.items.splice(index, 1);
-          }))
+          prop.onRemoveItem(index, name);
         }}
       />)}
       <input className={chipStyle.text}
         onKeyDown={e => {
           const target = e.target as HTMLInputElement
           if (e.key === 'Backspace' && target.selectionStart === 0 && target.selectionEnd === 0) {
-            setState(produce(state, draft => {
-              draft.items.pop()
-            }))
+            const lastIndex = items.length-1
+            prop.onRemoveItem(lastIndex, items[lastIndex])
           }
           if (e.key === 'Enter' && target.value.length > 0) {
-            setState(produce(state, draft => {
-              draft.items.push({
-                name: target.value
-              })
-              target.value = ''
-            }))
+            prop.onAddItem(target.value)
+            target.value = ''
           }
         }}
       />
     </div>
+  )
+}
+
+export function TestChipField(prop: {items?: string[]}) {
+  const [state, setState] = useState(prop);
+  return (
+    <ChipField
+      items={state.items}
+      onAddItem={val => {
+        setState(produce(state, draft => {
+          if (!draft.items) {
+            draft.items = []
+          }
+          draft.items.push(val)
+        }))
+      }}
+      onRemoveItem={(index, val) => {
+        setState(produce(state, draft => {
+          if (!draft.items) {
+            draft.items = []
+          }
+          draft.items.splice(index, 1)
+        }))
+      }}
+    />
   )
 }
