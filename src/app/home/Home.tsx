@@ -12,7 +12,10 @@ export default function Home() {
       }}
     >
       <TestChipField />
-      <input className={homeStyle.test}></input>
+      <TestChipField
+        items={['hello', 'world', 'lets', 'rock']}
+        readonly={true}
+      />
     </div>
   )
 }

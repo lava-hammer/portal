@@ -4,67 +4,82 @@ import produce from 'immer'
 
 export interface IChipProp {
   name: string;
+  readonly?: boolean;
   onDelete?: (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => void;
 }
 
 export function Chip(prop: IChipProp) {
+  const closeButton = prop.readonly ? null : (
+    <div className={chipStyle.del}
+      onClick={ e => {
+        if (prop.onDelete) {
+          prop.onDelete(e);
+        }
+      }}
+    >
+    X
+    </div>
+  )
   return (
     <div className={chipStyle.chip}>
       {prop.name}
-      <div
-        className={chipStyle.del}
-        onClick={ e => {
-          if (prop.onDelete) {
-            prop.onDelete(e);
-          }
-        }}
-      >
-        X
-      </div>
+      {closeButton}
     </div>
   )
 }
 
 export interface IChipFieldProp {
   items?: string[];
-  onAddItem: (value: string) => void;
-  onRemoveItem: (index: number, item: string) => void;
+  readonly?: boolean;
+  onAddItem?: (value: string) => void;
+  onRemoveItem?: (index: number, item: string) => void;
 }
 
 export function ChipField(prop: IChipFieldProp) {
   const items = prop.items || []
+  const textInput = prop.readonly ? null : (
+    <input className={chipStyle.text}
+      onKeyDown={e => {
+        const target = e.target as HTMLInputElement
+        if (e.key === 'Backspace' && target.selectionStart === 0 && target.selectionEnd === 0) {
+          const lastIndex = items.length-1
+          if (prop.onRemoveItem) {
+            prop.onRemoveItem(lastIndex, items[lastIndex])
+          }
+        }
+        if (e.key === 'Enter' && target.value.length > 0) {
+          if (prop.onAddItem) {
+            prop.onAddItem(target.value)
+          }
+          target.value = ''
+        }
+      }}
+    />
+  )
   return (
     <div className={chipStyle.field}>
       {items.map((name, index) => 
       <Chip 
         key={index}
         name={name}
+        readonly={prop.readonly}
         onDelete={e => {
-          prop.onRemoveItem(index, name);
+          if (prop.onRemoveItem) {
+            prop.onRemoveItem(index, name);
+          }
         }}
       />)}
-      <input className={chipStyle.text}
-        onKeyDown={e => {
-          const target = e.target as HTMLInputElement
-          if (e.key === 'Backspace' && target.selectionStart === 0 && target.selectionEnd === 0) {
-            const lastIndex = items.length-1
-            prop.onRemoveItem(lastIndex, items[lastIndex])
-          }
-          if (e.key === 'Enter' && target.value.length > 0) {
-            prop.onAddItem(target.value)
-            target.value = ''
-          }
-        }}
-      />
+      {textInput}
     </div>
   )
 }
 
-export function TestChipField(prop: {items?: string[]}) {
+export function TestChipField(prop: {items?: string[], readonly?: boolean}) {
   const [state, setState] = useState(prop);
   return (
     <ChipField
       items={state.items}
+      readonly={prop.readonly}
       onAddItem={val => {
         setState(produce(state, draft => {
           if (!draft.items) {
