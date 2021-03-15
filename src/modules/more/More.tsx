@@ -1,16 +1,32 @@
-import React, { Component, Ref } from 'react'
+import React, { Component, Ref, RefObject } from 'react'
 import { Chip } from '../chips/Chip'
 import styleMore from './More.module.less'
 
-export class More extends Component<{items: string[]}> {
+export interface IMoreProp {
+  items: string[];
+}
 
-  ref: Ref<HTMLDivElement> = null;
+interface IMoreState {
+  hasMore: boolean;
+}
+
+export class More extends Component<IMoreProp, IMoreState> {
+
+  container: RefObject<HTMLDivElement>;
+
+  constructor(props: IMoreProp) {
+    super(props)
+    this.container = React.createRef();
+    this.state = {
+      hasMore: false,
+    }
+  }
 
   render() {
     return (
       <div 
         className={styleMore.container}
-        ref={this.ref}
+        ref={this.container}
       >
         {
           this.props.items.map( (e, i) => (
@@ -21,11 +37,36 @@ export class More extends Component<{items: string[]}> {
             />
           ))
         }
+        {
+          this.state.hasMore ? (
+            <div className={styleMore.more}>
+              <span>+more</span>
+            </div>
+          ) : null
+        }
       </div>
     )
   }
 
-  componentDidUpdate() {
-    // todo:
+  componentDidMount() {
+    this.checkHasMore()
   }
+
+  componentDidUpdate() {
+    this.checkHasMore()
+  }
+
+  private checkHasMore() {
+    const container = this.container.current;
+    if (container) {
+      const hasMore = container.scrollHeight > container.clientHeight
+      if (hasMore !== this.state.hasMore) {
+        this.setState({
+          hasMore
+        })
+      }
+    }
+  }
+
+  
 }
