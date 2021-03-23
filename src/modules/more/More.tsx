@@ -1,6 +1,6 @@
 import React, { Component, Ref, RefObject } from 'react'
 import { Chip } from '../chips/Chip'
-import styleMore from './More.module.less'
+import './More.less'
 
 export interface IMoreProp {
   items: string[];
@@ -25,7 +25,7 @@ export class More extends Component<IMoreProp, IMoreState> {
   render() {
     return (
       <div 
-        className={styleMore.container}
+        className="container"
         ref={this.container}
       >
         {
@@ -39,7 +39,7 @@ export class More extends Component<IMoreProp, IMoreState> {
         }
         {
           this.state.hasMore ? (
-            <div className={styleMore.more}>
+            <div className="more">
               <span>+more</span>
             </div>
           ) : null
