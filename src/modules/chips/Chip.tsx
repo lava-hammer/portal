@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import chipStyle from './Chip.module.less'
 import produce from 'immer'
+import { Playground } from '../playground/Playground';
 
 export interface IChipProp {
   name: string;
@@ -97,5 +98,16 @@ export function TestChipField(prop: {items?: string[], readonly?: boolean}) {
         }))
       }}
     />
+  )
+}
+
+export function TestChips() {
+  return (
+    <Playground width={300} height={200}>
+      <TestChipField
+        items={['hello', 'world', 'lets', 'rock']}
+        // readonly={true}
+      />
+    </Playground>
   )
 }

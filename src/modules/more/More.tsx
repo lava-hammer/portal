@@ -1,5 +1,6 @@
 import React, { Component, Ref, RefObject } from 'react'
 import { Chip } from '../chips/Chip'
+import { Playground } from '../playground/Playground';
 import './More.less'
 
 export interface IMoreProp {
@@ -67,6 +68,12 @@ export class More extends Component<IMoreProp, IMoreState> {
       }
     }
   }
+}
 
-  
+export function TestMore() {
+  return (
+  <Playground width={300} height={200}>
+    <More items={['AAAA', 'BBBBBB', 'CCCC', 'DDDDD', 'EEEEE']} />
+  </Playground>
+  )
 }

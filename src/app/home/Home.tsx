@@ -1,23 +1,38 @@
-import React from 'react'
-import { TestChipField } from '../../modules/chips/Chip'
-import { More } from '../../modules/more/More'
-import homeStyle from './Home.module.less'
+import React, { useState } from 'react'
+import { TestChips } from '../../modules/chips/Chip'
+import { TestMore, More } from '../../modules/more/More'
+import { pick } from '../../utils/random'
+
+const registry: {[key: string]: ()=> React.ReactNode} = {
+  'chips': () => {
+    return <TestChips />;
+  },
+  'more': () => {
+    return <TestMore />
+  },
+}
 
 export default function Home() {
+  const [egName, setEg] = useState(pick(Object.keys(registry)))
   return (
-    <div 
-      className={homeStyle.playground}
-      style={{
-        width: '300px',
-        height: '200px',
-      }}
-    >
-      {/* <TestChipField />
-      <TestChipField
-        items={['hello', 'world', 'lets', 'rock']}
-        readonly={true}
-      /> */}
-      <More items={['AAAA', 'BBBBBB', 'CCCC', 'DDDDD', 'EEEEE']} />
+    <div style={{
+      margin: '20px',
+    }}>
+      <select
+        value={egName}
+        onChange={e => {
+          setEg(e.target.value)
+        }}
+      >
+        {
+          Object.keys(registry).map(e => (
+            <option key={e} value={e}>{e}</option>
+          ))
+        }
+      </select>
+      {
+        registry[egName]()
+      }
     </div>
   )
 }
