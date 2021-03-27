@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { TestChips } from '../../modules/chips/Chip'
 import { TestMore, More } from '../../modules/more/More'
+import { TestTab } from '../../modules/tabs/Tab'
 import { pick } from '../../utils/random'
 
 const registry: {[key: string]: ()=> React.ReactNode} = {
@@ -10,6 +11,9 @@ const registry: {[key: string]: ()=> React.ReactNode} = {
   'more': () => {
     return <TestMore />
   },
+  'tabs': () => {
+    return <TestTab />
+  }
 }
 
 export default function Home() {

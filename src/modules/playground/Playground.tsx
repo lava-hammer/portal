@@ -4,7 +4,7 @@ import playgroundStyle from './Playground.module.less'
 export interface IPlaygroundProp {
   width: number;
   height: number;
-  children?: JSX.Element[];
+  children?: React.ReactNode;
 }
 
 export function Playground(props: IPlaygroundProp) {
