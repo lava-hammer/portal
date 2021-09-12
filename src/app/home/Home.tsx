@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { TestChips } from '../../modules/chips/Chip'
-import { TestMore, More } from '../../modules/more/More'
+import { TestMore } from '../../modules/more/More'
 import { TestTab } from '../../modules/tabs/Tab'
 import { TestFileSeek } from '../../modules/fileseek/Fileseek'
 import { pick } from '../../utils/random'
+import { TestPopup } from '../../modules/popup/Popup'
 
 const registry: {[key: string]: ()=> React.ReactNode} = {
   'chips': () => {
@@ -17,6 +18,9 @@ const registry: {[key: string]: ()=> React.ReactNode} = {
   },
   'file_seek': () => {
     return <TestFileSeek />
+  },
+  'popup': () => {
+    return <TestPopup />
   },
 }
 

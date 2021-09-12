@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import chipStyle from './Chip.module.less'
 import produce from 'immer'
-import { Playground } from '../playground/Playground';
+import { Playground } from '../playground/Playground'
 
 export interface IChipProp {
   name: string;
