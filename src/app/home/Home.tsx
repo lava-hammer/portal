@@ -5,6 +5,7 @@ import { TestTab } from '../../modules/tabs/Tab'
 import { TestFileSeek } from '../../modules/fileseek/Fileseek'
 import { pick } from '../../utils/random'
 import { TestPopup } from '../../modules/popup/Popup'
+import { TestGroupList } from '../../modules/grouplist/GroupList'
 
 const registry: {[key: string]: ()=> React.ReactNode} = {
   'chips': () => {
@@ -22,6 +23,9 @@ const registry: {[key: string]: ()=> React.ReactNode} = {
   'popup': () => {
     return <TestPopup />
   },
+  'group_list': () => {
+    return <TestGroupList />
+  }
 }
 
 const LAST_EG = 'last-eg';
