@@ -23,13 +23,13 @@ const GROUP_SIZE = 100;
 // ...
 // - 99999
 
-function num2group(num: number): string {
+function groupKey(num: number): string {
   return `G${Math.floor(num/GROUP_SIZE)}XX`;
 }
 
 function initGroup(num: number): IGroup {
   return {
-    group: num2group(num),
+    group: groupKey(num),
     items: [],
   }
 }
@@ -115,103 +115,60 @@ export function Item(props: {value: number}) {
   )
 }
 
-export function Group(props: {name: string, fold: boolean}) {
+export function Group(props: {name: string, fold: boolean, onClick: ()=>void}) {
   return (
-    <div className="group">{`${props.fold ? '+' : '-'} [${props.name}]`}</div>
+    <div className="group" onClick={props.onClick}>{`${props.fold ? '+' : '-'} [${props.name}]`}</div>
   )
 }
 
-export function Loader(props: {loading: boolean, meta: IELoader}) {
+export function Loader(props: {loading: boolean, meta: ILoaderMeta}) {
   return (
-    <div className="loader" data-meta={JSON.stringify(props.meta)} >{props.loading ? 'Loading...' : ''}</div>
+    <div className="loader" data-meta={JSON.stringify(props.meta)} >{props.loading ? 'Loading...' : '...'}</div>
   )
 }
 
 const LOAD_SIZE = 20;
 
-interface IElement {
-  type: 'group' | 'item' | 'loader',
+interface ILoaderMeta {
+  group: string;
   key: string;
-}
-
-interface IEGroup extends IElement {
-  name: string;
-}
-
-interface IEItem extends IElement {
-  value: number;
-}
-
-interface IELoader extends IElement {
   pos: number;
   dir: number;
 }
 
-type IEX = IEGroup | IEItem | IELoader;
+function itemKey(value: number): string {
+  return `I${value}`;
+}
+
+function loaderKey(pos: number, dir: number): string {
+  return `L${pos}${dir > 0 ? '+' : '-'}`
+}
+
+interface IGroupSet {
+  group: string;
+  firstItem: number;
+  lastItem: number;
+  items: number[];
+  fold: boolean;
+  moreForward: boolean;
+  moreBackward: boolean;
+}
+
+function initGroupSet(): IGroupSet {
+  return {
+    group: '',
+    firstItem: FIRST_NUM,
+    lastItem: FIRST_NUM,
+    items: [],
+    fold: false,
+    moreForward: false,
+    moreBackward: false,
+  }
+}
 
 interface IGroupListState {
-  list: IEX[];
-}
-
-function makeItem(value: number): IEItem {
-  return {
-    type: 'item',
-    key: `I${value}`,
-    value,
-  };
-}
-
-function makeGroup(name: string): IEGroup {
-  return {
-    type: 'group',
-    name,
-    key: name,
-  };
-}
-
-function makeLoader(pos: number, dir: number): IELoader {
-  return {
-    type: 'loader',
-    key: `L${pos}${dir > 0 ? '+' : '-'}`,
-    pos,
-    dir,
-  };
-}
-
-function lastGroupKey(list: IEX[], fromIndex: number): string {
-  for (let i=fromIndex-1; i>=0; --i) {
-    const e = list[i];
-    if (e.type === 'group') {
-      return e.key;
-    }
-    if (e.type === 'item') {
-      const item = e as IEItem;
-      return num2group(item.value);
-    }
-  }
-  return '';
-}
-
-function lastItemValue(list: IEX[]): number {
-  for (let i = list.length-1; i >= 0; --i) {
-    const e = list[i];
-    if (e.type === 'item') {
-      const item = e as IEItem;
-      return item.value;
-    }
-  }
-  return -1;
-}
-
-function nextItemValue(list: IEX[], fromIndex: number): number {
-  for (let i=fromIndex+1; i<list.length; ++i) {
-    const e = list[i];
-    if (e.type === 'item') {
-      const item = e as IEItem;
-      return item.value;
-    }
-  }
-  return Infinity;
+  loadingKey: string;
+  list: IGroupSet[];
 }
 
 export class GroupList extends React.Component<{}, IGroupListState> {
@@ -219,45 +176,96 @@ export class GroupList extends React.Component<{}, IGroupListState> {
   constructor(props: any) {
     super(props);
     this.state = {
+      loadingKey: '',
       list: [
-        makeLoader(FIRST_NUM, 1),
+        initGroupSet(),
       ],
     };
   }
 
   viewRef = createRef<HTMLDivElement>();
+  inputRef = createRef<HTMLInputElement>();
   isLoading = false;
 
   componentDidMount() {
     this.onScroll();
   }
 
-  async loadItems(loaderKey: string, pos: number, dir: number) {
-    console.log('load items:', pos, dir);
-    // set loader to loading
+  async loadItems(meta: ILoaderMeta) {
+    console.log('load items:', meta.key);
     this.isLoading = true;
+    this.setState(produce((draftState) => {
+      draftState.loadingKey = meta.key;
+    }, this.state));
     const rsp = await fetchGroupItems({
-      pos,
+      pos: meta.pos,
       len: LOAD_SIZE,
-      dir,
+      dir: meta.dir,
     });
-    this.setState(produce((draftState: IGroupListState) => {
-      const index = draftState.list.findIndex(e => e.key === loaderKey);
-      const insertList: IEX[] = [];
-      const cutoffValue = nextItemValue(draftState.list, index);
-      for (let gps of rsp.groups) {
-        if (gps.group != lastGroupKey(draftState.list, index)) {
-          insertList.push(makeGroup(gps.group));
-        }
-        insertList.push(...(gps.items.filter(e => e < cutoffValue).map(e => makeItem(e))));
+    // extend group set
+    this.setState(produce(draftState => {
+      if (meta.group === '') {
+        // init load, clear list
+        draftState.list = []; 
       }
-      insertList.push(makeLoader(lastItemValue(insertList)+1, 1));
-      draftState.list.splice(index, 1, ...insertList);
+      for (let i=0; i<rsp.groups.length; ++i) {
+        const gp = rsp.groups[i];
+        const isFirstGroup = i === 0;
+        const isLastGroup = i === rsp.groups.length - 1;
+        let gset = draftState.list.find(e => e.group === gp.group);
+        if (gset) {
+          // extend existing group set
+          const itemSet = new Set(gset.items);
+          for (let iv of gp.items) {
+            itemSet.add(iv);
+          }
+          const itemList = [...itemSet].sort((a, b) => a - b);
+          gset.items = itemList;
+          gset.firstItem = gset.items[0];
+          gset.lastItem = gset.items[gset.items.length-1];
+          
+          // update loader flags
+          if (meta.dir === -1) {
+            if (isFirstGroup) {
+              gset.moreForward = rsp.more;
+            } else {
+              gset.moreForward = false;
+            }
+          }
+          if (meta.dir === 1 && !isLastGroup) {
+            if (isLastGroup) {
+              gset.moreBackward = rsp.more;
+            } else {
+              gset.moreBackward = false;
+            }
+          }
+        } else {
+          gset = {
+            group: gp.group,
+            firstItem: gp.items[0],
+            lastItem: gp.items[gp.items.length-1],
+            items: gp.items,
+            fold: false,
+            moreForward: isFirstGroup && rsp.more && meta.dir === -1,
+            moreBackward: isLastGroup && rsp.more && meta.dir === 1,
+          };
+          draftState.list.push(gset);
+        }
+      }
     }, this.state));
     this.isLoading = false;
+    this.onScroll();
+  }
+
+  async jumpItem(pos: number) {
+    console.log('jump:', pos);
+    this.state.list.find(g => {
+
+    })
   }
 
   onScroll() {
+    console.log(this.isLoading, this.viewRef.current);
     if (this.isLoading) return;
     if (this.viewRef.current === null) return;
     const view = this.viewRef.current;
@@ -268,61 +276,74 @@ export class GroupList extends React.Component<{}, IGroupListState> {
       const loader = i as HTMLDivElement;
       const itemBeginY = loader.offsetTop - view.offsetTop;
       const itemEndY = itemBeginY + loader.clientHeight;
-
+      console.log(itemBeginY, viewEndY, itemEndY, viewBeginY);
       if (!(itemBeginY > viewEndY || itemEndY < viewBeginY)) {
         const meta = JSON.parse(loader.dataset['meta']!);
-        this.loadItems(meta.key, meta.pos, meta.dir);
+        this.loadItems(meta);
       }
     }
   }
 
-  groupFold: {[key: string]: boolean} = {};
-
   render() {
+    const listItems = [];
+    for (let gset of this.state.list) {
+      // render each gset
+      const group = gset.group;
+      if (group) {
+        // normal group
+        if (gset.moreForward) {
+          const pos = gset.firstItem;
+          const dir = -1;
+          const key = loaderKey(pos, dir);
+          listItems.push(<Loader key={key} loading={this.state.loadingKey === key} meta={{ group, pos, dir, key }} />);
+        }
+        if (gset.group) {
+          listItems.push(<Group key={gset.group} name={gset.group} fold={gset.fold} onClick={() => {
+            this.setState(produce(draftState => {
+              const gss = draftState.list.find(e => e.group === group);
+              if (gss) {
+                gss.fold = !gss.fold;
+                setTimeout(this.onScroll.bind(this), 0);
+              }
+            }, this.state));
+          }} />);
+        }
+        if (gset.items.length > 0 && !gset.fold) {
+          for (let val of gset.items) {
+            listItems.push(<Item key={itemKey(val)} value={val} />);
+          }
+        }
+        if (gset.moreBackward) {
+          const pos = gset.lastItem;
+          const dir = 1;
+          const key = loaderKey(pos, dir);
+          listItems.push(<Loader key={key} loading={this.state.loadingKey === key} meta={{ group, pos, dir, key }} />);
+        }
+        // TODO: 连续的GroupSet之后要加一个GroupLoader
+      } else {
+        // init group
+        const pos = gset.firstItem;
+        const dir = 1;
+        const key = loaderKey(pos, dir);
+        listItems.push(<Loader key={key} loading={this.state.loadingKey === key} meta={{group, pos, dir, key}} />)
+      }
+    }
+    
     return (
       <div>
         <div>
-          <input type="text" />
+          <input type="text" ref={this.inputRef} />
           <button onClick={() => {
-
+            if (this.inputRef.current) {
+              const val = Number(this.inputRef.current.value);
+              if (!isNaN(val) && val >= FIRST_NUM && val <= LAST_NUM) {
+                this.jumpItem(Math.floor(val));
+              }
+            }
           }}>GO</button>
         </div>
         <div className="listview" ref={this.viewRef} onScroll={this.onScroll.bind(this)}>
-          {/* <Group name={'Test'} fold={false} />
-          {...([
-            123,
-            345,
-            2323,
-            2323,
-            3434,
-            2323,
-            4444,
-            555,
-            666,
-            777,
-            888,
-            9999,
-            110,
-            11,
-            12,
-            13,
-          ].map(e => (<Item value={e} />)))} */}
-          {...(this.state.list.map(e => {
-            switch(e.type) {
-              case 'item': {
-                const item = e as IEItem;
-                return (<Item key={item.key} value={item.value} />);
-              }
-              case 'group': {
-                const item = e as IEGroup;
-                return (<Group key={item.key} name={item.name} fold={this.groupFold[item.name] || false} />);
-              }
-              case 'loader': {
-                const item = e as IELoader;
-                return (<Loader key={item.key} loading={true} meta={item} />);
-              }
-            }
-          }))}
+          {...listItems}
         </div>
       </div>
     )
